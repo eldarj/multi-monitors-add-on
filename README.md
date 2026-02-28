@@ -1,6 +1,9 @@
 Multi Monitors Add-On
 =====================
 
+> **Fork** of [spin83/multi-monitors-add-on](https://github.com/spin83/multi-monitors-add-on),
+> updated for GNOME 46–49 compatibility.
+
 Extension inspired by https://github.com/darkxst/multiple-monitor-panels
 and rewritten from scratch for gnome-shell. Adds panels and workspace
 thumbnails for additional monitors. Settings changes are applied
@@ -25,30 +28,23 @@ Features
 Supported GNOME Versions
 ========================
 
-| Branch / Version | GNOME Shell |
+This repository contains only the `master` branch, targeting modern GNOME
+releases. Legacy GNOME versions (3.x) are not supported here — refer to the
+[upstream repository](https://github.com/spin83/multi-monitors-add-on) for
+older branches.
+
+| Branch | GNOME Shell |
 |---|---|
-| `master` (this branch) | **46, 47, 48, 49** |
-| GNOME 3.38 (legacy) | 3.38 |
-| `gnome-3-32_3-36` | 3.32 – 3.36 |
-| `gnome-3-24_3-30` | 3.24 – 3.30 |
-| `gnome-3-20_3-22` | 3.20 – 3.22 |
-| `gnome-3-16_3-18` | 3.16 – 3.18 |
-| `gnome-3-14` | 3.14 |
-| `gnome-3-10` | 3.10 |
+| `master` | **46, 47, 48, 49** |
 
 
 Installation
 ============
 
-### From GNOME Extensions website
-
-Visit https://extensions.gnome.org/extension/600/multi-monitors-add-on/ and
-toggle the switch to install.
-
 ### From git
 
 ```bash
-git clone https://github.com/spin83/multi-monitors-add-on.git
+git clone https://github.com/eldarj/multi-monitors-add-on.git
 cd multi-monitors-add-on
 
 # Copy extension files
@@ -62,20 +58,51 @@ glib-compile-schemas \
 gnome-extensions enable multi-monitors-add-on@spin83
 ```
 
-**Wayland:** Log out and back in to reload GNOME Shell with the new extension.
+### Reloading GNOME Shell
 
-**X11:** Press `Alt+F2`, type `r`, press `Enter` to restart the shell in place,
-then enable the extension.
+Changes to the extension files require a GNOME Shell reload to take effect.
+
+**Wayland:** Log out and back in to reload GNOME Shell.
+
+**X11:** Press `Alt+F2`, type `r`, press `Enter` to restart the shell in place.
+
+After reloading, re-enable the extension if needed:
+
+```bash
+gnome-extensions enable multi-monitors-add-on@spin83
+```
+
+### Updating
+
+```bash
+cd multi-monitors-add-on
+git pull
+cp -r multi-monitors-add-on@spin83 ~/.local/share/gnome-shell/extensions/
+glib-compile-schemas \
+  ~/.local/share/gnome-shell/extensions/multi-monitors-add-on@spin83/schemas/
+```
+
+Then reload GNOME Shell as described above.
 
 ### Verifying the installation
 
 ```bash
-# Check for load errors
+# Confirm the extension is enabled
+gnome-extensions list --enabled | grep multi
+
+# Show extension status and version
+gnome-extensions info multi-monitors-add-on@spin83
+
+# Check for load errors (follow live log)
 journalctl -f -o cat /usr/bin/gnome-shell | grep -i "multi\|error\|exception"
 
-# List enabled extensions
-gnome-extensions list --enabled
+# Check logs from the current boot only
+journalctl -b -o cat /usr/bin/gnome-shell | grep -i "multi\|error\|exception"
 ```
+
+If the extension loaded successfully you should see a panel on each secondary
+monitor. You can also open **Settings → Extensions → Multi Monitors Add-On**
+to confirm it appears and is toggled on.
 
 
 Configuration
@@ -97,6 +124,19 @@ icon in the top bar and choose *Preferences*).
 The **Indicator Transfer** table lets you pick any indicator from the primary
 panel (e.g. `keyboard`, `volume`, network applets from extensions) and assign
 it to a secondary monitor index. Changes take effect immediately.
+
+
+Reporting Issues
+================
+
+If you run into a bug or unexpected behaviour, please
+[open an issue on GitHub](https://github.com/eldarj/multi-monitors-add-on/issues).
+
+Include the following to help with diagnosis:
+
+- Your GNOME Shell version (`gnome-shell --version`)
+- Relevant log output (`journalctl -b -o cat /usr/bin/gnome-shell | grep -i "multi\|error\|exception"`)
+- A description of what you expected vs. what happened
 
 
 GNOME 46–49 Compatibility — What Changed
