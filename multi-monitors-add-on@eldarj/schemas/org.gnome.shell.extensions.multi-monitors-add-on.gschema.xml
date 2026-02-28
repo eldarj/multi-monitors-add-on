@@ -48,6 +48,29 @@
       <summary>A list of indicators for transfer.</summary>
       <description>A list of indicators selected for transfer to additional Panel.</description>
     </key>
-    
+
+    <key name="show-quick-settings" type="b">
+      <default>true</default>
+      <summary>Show Quick Settings button on additional monitors.</summary>
+      <description>Toggle the Quick Settings button on secondary panels.</description>
+    </key>
+
+    <key name="panel-position" type="s">
+      <choices>
+        <choice value='top'/>
+        <choice value='bottom'/>
+      </choices>
+      <default>'top'</default>
+      <summary>Panel position on secondary monitors.</summary>
+      <description>Position of the panel bar on additional monitors.</description>
+    </key>
+
+    <key name="panel-height" type="i">
+      <range><min>0</min><max>64</max></range>
+      <default>0</default>
+      <summary>Panel height in pixels.</summary>
+      <description>Height of secondary panels in pixels. 0 uses the system default.</description>
+    </key>
+
   </schema>
 </schemalist>

@@ -27,7 +27,10 @@ const SHOW_INDICATOR_ID = 'show-indicator';
 const SHOW_PANEL_ID = 'show-panel';
 const SHOW_ACTIVITIES_ID = 'show-activities';
 const SHOW_DATE_TIME_ID = 'show-date-time';
+const SHOW_QUICK_SETTINGS_ID = 'show-quick-settings';
 const THUMBNAILS_SLIDER_POSITION_ID = 'thumbnails-slider-position';
+const PANEL_POSITION_ID = 'panel-position';
+const PANEL_HEIGHT_ID = 'panel-height';
 const AVAILABLE_INDICATORS_ID = 'available-indicators';
 const TRANSFER_INDICATORS_ID = 'transfer-indicators';
 const ENABLE_HOT_CORNERS = 'enable-hot-corners';
@@ -61,7 +64,16 @@ export default class MultiMonitorsPreferences extends ExtensionPreferences {
         panelGroup.add(this._createSwitchRow(
             _('Show DateTime-Button on additional monitors.'), settings, SHOW_DATE_TIME_ID));
         panelGroup.add(this._createSwitchRow(
+            _('Show Quick Settings button on additional monitors.'), settings, SHOW_QUICK_SETTINGS_ID));
+        panelGroup.add(this._createSwitchRow(
             _('Enable hot corners.'), desktopSettings, ENABLE_HOT_CORNERS));
+        panelGroup.add(this._createComboRow(
+            _('Panel position on additional monitors.'),
+            settings,
+            PANEL_POSITION_ID,
+            { top: _('Top'), bottom: _('Bottom') }));
+        panelGroup.add(this._createSpinRow(
+            _('Panel height in pixels (0 = system default).'), settings, PANEL_HEIGHT_ID));
 
         // Thumbnails slider position combo
         panelGroup.add(this._createComboRow(
@@ -190,6 +202,29 @@ export default class MultiMonitorsPreferences extends ExtensionPreferences {
         settings.bind(schemaId, combo, 'active-id', Gio.SettingsBindFlags.DEFAULT);
         row.add_suffix(combo);
         row.activatable_widget = combo;
+        return row;
+    }
+
+    _createSpinRow(label, settings, schemaId) {
+        const row = new Adw.ActionRow({ title: label });
+        const spin = new Gtk.SpinButton({
+            adjustment: new Gtk.Adjustment({
+                lower: 0,
+                upper: 64,
+                step_increment: 1,
+            }),
+            numeric: true,
+            valign: Gtk.Align.CENTER,
+        });
+        spin.set_value(settings.get_int(schemaId));
+        spin.connect('value-changed', () => {
+            settings.set_int(schemaId, spin.get_value_as_int());
+        });
+        settings.connect('changed::' + schemaId, () => {
+            spin.set_value(settings.get_int(schemaId));
+        });
+        row.add_suffix(spin);
+        row.activatable_widget = spin;
         return row;
     }
 

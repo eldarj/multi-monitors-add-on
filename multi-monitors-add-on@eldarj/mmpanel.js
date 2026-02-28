@@ -33,6 +33,8 @@ import * as MMCalendar from './mmcalendar.js';
 
 const SHOW_ACTIVITIES_ID = 'show-activities';
 const SHOW_DATE_TIME_ID = 'show-date-time';
+const SHOW_QUICK_SETTINGS_ID = 'show-quick-settings';
+const PANEL_HEIGHT_ID = 'panel-height';
 const AVAILABLE_INDICATORS_ID = 'available-indicators';
 const TRANSFER_INDICATORS_ID = 'transfer-indicators';
 
@@ -194,9 +196,42 @@ class MultiMonitorsActivitiesButton extends PanelMenu.Button {
     }
 });
 
+export const MultiMonitorsQuickSettingsButton = GObject.registerClass(
+class MultiMonitorsQuickSettingsButton extends PanelMenu.Button {
+    _init() {
+        super._init(0.0, null, true);
+        this.name = 'mmPanelQuickSettings';
+
+        this._icon = new St.Icon({
+            icon_name: 'preferences-system-symbolic',
+            style_class: 'system-status-icon',
+        });
+        this.add_child(this._icon);
+    }
+
+    vfunc_event(event) {
+        if (event.type() === Clutter.EventType.TOUCH_BEGIN ||
+            event.type() === Clutter.EventType.BUTTON_PRESS) {
+            const qs = Main.panel.statusArea.quickSettings;
+            if (qs?.menu) {
+                if (qs.menu.isOpen) {
+                    qs.menu.close();
+                } else {
+                    const orig = qs.menu.sourceActor;
+                    qs.menu.sourceActor = this;
+                    qs.menu.open();
+                    qs.menu.sourceActor = orig;
+                }
+            }
+        }
+        return Clutter.EVENT_PROPAGATE;
+    }
+});
+
 const MULTI_MONITOR_PANEL_ITEM_IMPLEMENTATIONS = {
     'activities': MultiMonitorsActivitiesButton,
     'dateMenu': MMCalendar.MultiMonitorsDateMenuButton,
+    'quickSettings': MultiMonitorsQuickSettingsButton,
 };
 
 export var MultiMonitorsPanel = (() => {
@@ -249,6 +284,14 @@ export var MultiMonitorsPanel = (() => {
                 this._showDateTime.bind(this));
             this._showDateTime();
 
+            this._showQuickSettingsId = this._settings.connect('changed::' + SHOW_QUICK_SETTINGS_ID,
+                this._showQuickSettings.bind(this));
+            this._showQuickSettings();
+
+            this._panelHeightId = this._settings.connect('changed::' + PANEL_HEIGHT_ID,
+                this._applyHeight.bind(this));
+            this._applyHeight();
+
             this.connect('destroy', this._onDestroy.bind(this));
         }
 
@@ -259,6 +302,8 @@ export var MultiMonitorsPanel = (() => {
 
             this._settings.disconnect(this._showActivitiesId);
             this._settings.disconnect(this._showDateTimeId);
+            this._settings.disconnect(this._showQuickSettingsId);
+            this._settings.disconnect(this._panelHeightId);
 
             Main.ctrlAltTabManager.removeGroup(this);
             Main.sessionMode.disconnect(this._updatedId);
@@ -317,6 +362,31 @@ export var MultiMonitorsPanel = (() => {
                 this.statusArea[role] = indicator;
             }
             return indicator;
+        }
+
+        _showQuickSettings() {
+            const indicator = this.statusArea['quickSettings'];
+            if (indicator)
+                indicator.visible = this._settings.get_boolean(SHOW_QUICK_SETTINGS_ID);
+        }
+
+        _applyHeight() {
+            const h = this._settings.get_int(PANEL_HEIGHT_ID);
+            this.set_style(h > 0 ? `height: ${h}px;` : null);
+        }
+
+        // Override Panel.Panel._addToPanelBox: same logic but without hiding
+        // the primary panel's same-named item, so primary panel is unaffected.
+        _addToPanelBox(role, indicator, position, box) {
+            const container = indicator.container;
+            container.show();
+            box.insert_child_at_index(container, position);
+            this.statusArea[role] = indicator;
+            const destroyId = indicator.connect('destroy', () => {
+                delete this.statusArea[role];
+                container.disconnect(destroyId);
+            });
+            this.menuManager.addMenu(indicator.menu);
         }
 
         _getDraggableWindowForPosition(stageX) {

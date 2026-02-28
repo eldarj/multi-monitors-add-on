@@ -24,23 +24,56 @@ import * as MMPanel from './mmpanel.js';
 
 export const SHOW_PANEL_ID = 'show-panel';
 export const ENABLE_HOT_CORNERS = 'enable-hot-corners';
+export const PANEL_POSITION_ID = 'panel-position';
 
 const MultiMonitorsPanelBox = class MultiMonitorsPanelBox {
     constructor(monitor) {
+        this._monitor = monitor;
+        this._settings = getSettings();
+        this._allocationId = null;
+
         this.panelBox = new St.BoxLayout({ name: 'panelBox', vertical: true, clip_to_allocation: true });
         Main.layoutManager.addChrome(this.panelBox, { affectsStruts: true, trackFullscreen: true });
-        this.panelBox.set_position(monitor.x, monitor.y);
         this.panelBox.set_size(monitor.width, -1);
         Main.uiGroup.set_child_below_sibling(this.panelBox, Main.layoutManager.panelBox);
+
+        this._updatePosition();
+        if (this._settings.get_string(PANEL_POSITION_ID) === 'bottom')
+            this._allocationId = this.panelBox.connect('notify::allocation', this._updatePosition.bind(this));
     }
 
     destroy() {
+        if (this._allocationId) {
+            this.panelBox.disconnect(this._allocationId);
+            this._allocationId = null;
+        }
         this.panelBox.destroy();
     }
 
+    _updatePosition() {
+        if (this._settings.get_string(PANEL_POSITION_ID) === 'bottom') {
+            const h = this.panelBox.height || 0;
+            this.panelBox.set_position(this._monitor.x,
+                this._monitor.y + this._monitor.height - h);
+        } else {
+            this.panelBox.set_position(this._monitor.x, this._monitor.y);
+        }
+    }
+
+    updatePosition() {
+        if (this._allocationId) {
+            this.panelBox.disconnect(this._allocationId);
+            this._allocationId = null;
+        }
+        this._updatePosition();
+        if (this._settings.get_string(PANEL_POSITION_ID) === 'bottom')
+            this._allocationId = this.panelBox.connect('notify::allocation', this._updatePosition.bind(this));
+    }
+
     updatePanel(monitor) {
-        this.panelBox.set_position(monitor.x, monitor.y);
+        this._monitor = monitor;
         this.panelBox.set_size(monitor.width, -1);
+        this._updatePosition();
     }
 };
 
@@ -55,6 +88,7 @@ export var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
         this.mmPanelBox = [];
 
         this._monitorsChangedId = null;
+        this._panelPositionId = null;
 
         this.statusIndicatorsController = null;
         this._layoutManager_updateHotCorners = null;
@@ -66,6 +100,12 @@ export var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
             if (!this._monitorsChangedId) {
                 this._monitorsChangedId = Main.layoutManager.connect('monitors-changed', this._monitorsChanged.bind(this));
                 this._monitorsChanged();
+            }
+
+            if (!this._panelPositionId) {
+                this._panelPositionId = this._settings.connect(
+                    'changed::' + PANEL_POSITION_ID,
+                    this._onPanelPositionChanged.bind(this));
             }
 
             if (!this.statusIndicatorsController) {
@@ -117,6 +157,11 @@ export var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
     }
 
     hidePanel() {
+        if (this._panelPositionId) {
+            this._settings.disconnect(this._panelPositionId);
+            this._panelPositionId = null;
+        }
+
         if (this._changedEnableHotCornersId) {
             this._desktopSettings.disconnect(this._changedEnableHotCornersId);
             this._changedEnableHotCornersId = null;
@@ -144,6 +189,10 @@ export var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
             this._popPanel();
             console.log('remove: ' + monitorId);
         }
+    }
+
+    _onPanelPositionChanged() {
+        this.mmPanelBox.forEach(pb => pb.updatePosition());
     }
 
     _monitorsChanged() {
