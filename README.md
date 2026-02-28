@@ -48,14 +48,14 @@ git clone https://github.com/eldarj/multi-monitors-add-on.git
 cd multi-monitors-add-on
 
 # Copy extension files
-cp -r multi-monitors-add-on@spin83 ~/.local/share/gnome-shell/extensions/
+cp -r multi-monitors-add-on@eldarj ~/.local/share/gnome-shell/extensions/
 
 # Compile the GSettings schema (required)
 glib-compile-schemas \
-  ~/.local/share/gnome-shell/extensions/multi-monitors-add-on@spin83/schemas/
+  ~/.local/share/gnome-shell/extensions/multi-monitors-add-on@eldarj/schemas/
 
 # Enable the extension
-gnome-extensions enable multi-monitors-add-on@spin83
+gnome-extensions enable multi-monitors-add-on@eldarj
 ```
 
 ### Reloading GNOME Shell
@@ -69,7 +69,7 @@ Changes to the extension files require a GNOME Shell reload to take effect.
 After reloading, re-enable the extension if needed:
 
 ```bash
-gnome-extensions enable multi-monitors-add-on@spin83
+gnome-extensions enable multi-monitors-add-on@eldarj
 ```
 
 ### Updating
@@ -77,9 +77,9 @@ gnome-extensions enable multi-monitors-add-on@spin83
 ```bash
 cd multi-monitors-add-on
 git pull
-cp -r multi-monitors-add-on@spin83 ~/.local/share/gnome-shell/extensions/
+cp -r multi-monitors-add-on@eldarj ~/.local/share/gnome-shell/extensions/
 glib-compile-schemas \
-  ~/.local/share/gnome-shell/extensions/multi-monitors-add-on@spin83/schemas/
+  ~/.local/share/gnome-shell/extensions/multi-monitors-add-on@eldarj/schemas/
 ```
 
 Then reload GNOME Shell as described above.
@@ -91,7 +91,7 @@ Then reload GNOME Shell as described above.
 gnome-extensions list --enabled | grep multi
 
 # Show extension status and version
-gnome-extensions info multi-monitors-add-on@spin83
+gnome-extensions info multi-monitors-add-on@eldarj
 
 # Check for load errors (follow live log)
 journalctl -f -o cat /usr/bin/gnome-shell | grep -i "multi\|error\|exception"
