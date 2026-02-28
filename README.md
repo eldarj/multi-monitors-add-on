@@ -16,13 +16,21 @@ Features
 - **Secondary panel** — full top bar on each additional monitor
 - **Activities button** — toggles the overview from any monitor
 - **DateTime/clock** — clock display with calendar popup on secondary panels
+- **Quick Settings button** — a single button on secondary panels that opens
+  the primary monitor's Quick Settings menu, positioned near the button
 - **Workspace thumbnails** — thumbnail slider on secondary monitors when the
   overview is open; position (left/right/auto) is configurable
+- **Panel position** — place the secondary panel at the top or bottom of each
+  additional monitor
+- **Panel height** — set a custom pixel height for secondary panels (0 uses
+  the system default)
 - **Indicator transfer** — move status-area indicators from the primary panel
   to a secondary panel
 - **Primary monitor indicator** — small icon in the top bar showing connected
   monitors, with a Preferences shortcut
 - **Hot corners** — GNOME hot-corner triggers on all monitors
+- **Accent color** — thumbnail slider border follows the system accent color
+  on GNOME 47+ via `var(--accent-bg-color)`
 
 
 Supported GNOME Versions
@@ -113,12 +121,15 @@ icon in the top bar and choose *Preferences*).
 
 | Setting | Description |
 |---|---|
-| Show indicator on Top Panel | Toggle the monitor indicator icon |
+| Show indicator on Top Panel | Toggle the monitor indicator icon on the primary bar |
 | Show Panel on additional monitors | Enable/disable the secondary panel |
 | Show Activities Button | Toggle the Activities button on secondary panels |
 | Show DateTime Button | Toggle the clock/calendar on secondary panels |
-| Show Thumbnails-Slider | None / Right / Left / Auto positioning |
+| Show Quick Settings button | Toggle the Quick Settings button on secondary panels |
 | Enable hot corners | Hot-corner triggers on all monitors |
+| Panel position | `Top` or `Bottom` — where the secondary panel sits on each monitor |
+| Panel height | Custom height in pixels; `0` uses the system default (up to 64 px) |
+| Show Thumbnails-Slider | `No` / `Right` / `Left` / `Auto` — workspace thumbnail sidebar |
 | Indicator Transfer table | Move specific status-area indicators to a secondary monitor |
 
 The **Indicator Transfer** table lets you pick any indicator from the primary
