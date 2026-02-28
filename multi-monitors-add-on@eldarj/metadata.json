@@ -4,7 +4,7 @@
     "name": "Multi Monitors Add-On (GNOME 46+)",
     "settings-schema": "org.gnome.shell.extensions.multi-monitors-add-on",
     "gettext-domain": "multi-monitors-add-on",
-    "description": "Add multiple monitors overview and panel for gnome-shell.",
+    "description": "Adds a full panel, Activities button, clock/calendar, and workspace thumbnail slider to every secondary monitor. Indicator transfer lets you move status-area applets from the primary panel to a secondary monitor. Hot corners work on all monitors. Supports GNOME 46–49.",
     "url": "https://github.com/eldarj/multi-monitors-add-on",
     "version": 1
 }
