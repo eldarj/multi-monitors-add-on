@@ -1,23 +1,29 @@
-/**
- * New node file
- */
+/*
+Copyright (C) 2014  spin83
 
-const { St, Meta } = imports.gi;
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
 
-const Main = imports.ui.main;
-const Panel = imports.ui.panel;
-const Layout = imports.ui.layout;
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-const Config = imports.misc.config;
+You should have received a copy of the GNU General Public License
+along with this program; if not, visit https://www.gnu.org/licenses/.
+*/
 
-const ExtensionUtils = imports.misc.extensionUtils;
-const CE = ExtensionUtils.getCurrentExtension();
-const Convenience = CE.imports.convenience;
-const MultiMonitors = CE.imports.extension;
-const MMPanel = CE.imports.mmpanel;
+import St from 'gi://St';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as Layout from 'resource:///org/gnome/shell/ui/layout.js';
 
-var SHOW_PANEL_ID = 'show-panel';
-var ENABLE_HOT_CORNERS = 'enable-hot-corners';
+import { getSettings, mmState } from './extension.js';
+import * as MMPanel from './mmpanel.js';
+
+export const SHOW_PANEL_ID = 'show-panel';
+export const ENABLE_HOT_CORNERS = 'enable-hot-corners';
 
 const MultiMonitorsPanelBox = class MultiMonitorsPanelBox {
     constructor(monitor) {
@@ -38,33 +44,28 @@ const MultiMonitorsPanelBox = class MultiMonitorsPanelBox {
     }
 };
 
-var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
-	constructor() {
-		this._settings = Convenience.getSettings();
-		this._desktopSettings = Convenience.getSettings("org.gnome.desktop.interface");
+export var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
+    constructor() {
+        this._settings = getSettings();
+        this._desktopSettings = getSettings('org.gnome.desktop.interface');
 
-		Main.mmPanel = [];
-	
-		this._monitorIds = [];
-		this.mmPanelBox = [];
-		this.mmappMenu = false;
-		
-		this._showAppMenuId = null;
-		this._monitorsChangedId = null;
-		
-		this.statusIndicatorsController = null;
-		this._layoutManager_updateHotCorners = null;
-		this._changedEnableHotCornersId = null;
-	}
+        mmState.mmPanel = [];
+
+        this._monitorIds = [];
+        this.mmPanelBox = [];
+
+        this._monitorsChangedId = null;
+
+        this.statusIndicatorsController = null;
+        this._layoutManager_updateHotCorners = null;
+        this._changedEnableHotCornersId = null;
+    }
 
     showPanel() {
         if (this._settings.get_boolean(SHOW_PANEL_ID)) {
             if (!this._monitorsChangedId) {
                 this._monitorsChangedId = Main.layoutManager.connect('monitors-changed', this._monitorsChanged.bind(this));
                 this._monitorsChanged();
-            }
-            if (!this._showAppMenuId) {
-                this._showAppMenuId = this._settings.connect('changed::'+MMPanel.SHOW_APP_MENU_ID, this._showAppMenu.bind(this));
             }
 
             if (!this.statusIndicatorsController) {
@@ -75,8 +76,8 @@ var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
                 this._layoutManager_updateHotCorners = Main.layoutManager._updateHotCorners;
 
                 const _this = this;
-                Main.layoutManager._updateHotCorners = function() {
-                    this.hotCorners.forEach((corner) => {
+                Main.layoutManager._updateHotCorners = function () {
+                    this.hotCorners.forEach(corner => {
                         if (corner)
                             corner.destroy();
                     });
@@ -103,149 +104,97 @@ var MultiMonitorsLayoutManager = class MultiMonitorsLayoutManager {
                 };
 
                 if (!this._changedEnableHotCornersId) {
-                    this._changedEnableHotCornersId = this._desktopSettings.connect('changed::'+ENABLE_HOT_CORNERS,
-                            Main.layoutManager._updateHotCorners.bind(Main.layoutManager));
+                    this._changedEnableHotCornersId = this._desktopSettings.connect(
+                        'changed::' + ENABLE_HOT_CORNERS,
+                        Main.layoutManager._updateHotCorners.bind(Main.layoutManager));
                 }
 
                 Main.layoutManager._updateHotCorners();
             }
-        }
-        else {
+        } else {
             this.hidePanel();
         }
     }
 
-	hidePanel() {
-		if (this._changedEnableHotCornersId) {
-			global.settings.disconnect(this._changedEnableHotCornersId);
-			this._changedEnableHotCornersId = null;
-		}
-		
-		if (this._layoutManager_updateHotCorners) {
-			Main.layoutManager['_updateHotCorners'] = this._layoutManager_updateHotCorners;
-			this._layoutManager_updateHotCorners = null;
-			Main.layoutManager._updateHotCorners();
-		}
-			
-		if (this.statusIndicatorsController) {
-			this.statusIndicatorsController.destroy();
-			this.statusIndicatorsController = null;
-		}
-		
-		if (this._showAppMenuId) {
-			this._settings.disconnect(this._showAppMenuId);
-			this._showAppMenuId = null;
-		}
-		this._hideAppMenu();
-		
-		if (this._monitorsChangedId) {
-			Main.layoutManager.disconnect(this._monitorsChangedId);
-			this._monitorsChangedId = null;
-		}
+    hidePanel() {
+        if (this._changedEnableHotCornersId) {
+            this._desktopSettings.disconnect(this._changedEnableHotCornersId);
+            this._changedEnableHotCornersId = null;
+        }
 
-		let panels2remove = this._monitorIds.length;
-		for (let i = 0; i < panels2remove; i++) {
-			let monitorId = this._monitorIds.pop();
-			this._popPanel();
-			global.log("remove: "+monitorId);
-		}
-	}
+        if (this._layoutManager_updateHotCorners) {
+            Main.layoutManager['_updateHotCorners'] = this._layoutManager_updateHotCorners;
+            this._layoutManager_updateHotCorners = null;
+            Main.layoutManager._updateHotCorners();
+        }
 
-	_monitorsChanged () {
-		let monitorChange = Main.layoutManager.monitors.length - this._monitorIds.length -1;
-		if (monitorChange<0) {
-			for (let idx = 0; idx<-monitorChange; idx++) {
-				let monitorId = this._monitorIds.pop();
-				this._popPanel();
-				global.log("remove: "+monitorId);
-			}
-		}
-		
-		let j = 0;
-		let tIndicators = false;
-		for (let i = 0; i < Main.layoutManager.monitors.length; i++) {
-			if (i!=Main.layoutManager.primaryIndex) {
-				let monitor = Main.layoutManager.monitors[i];
-				let monitorId = "i"+i+"x"+monitor.x+"y"+monitor.y+"w"+monitor.width+"h"+monitor.height;
-				if (monitorChange>0 && j==this._monitorIds.length) {
-					this._monitorIds.push(monitorId);
-					this._pushPanel(i, monitor);
-					global.log("new: "+monitorId);
-					tIndicators = true;
-				}
-				else if (this._monitorIds[j]>monitorId || this._monitorIds[j]<monitorId) {
-					let oldMonitorId = this._monitorIds[j];
-					this._monitorIds[j]=monitorId;
-					this.mmPanelBox[j].updatePanel(monitor);
-					global.log("update: "+oldMonitorId+">"+monitorId);
-				}
-				j++;
-			}
-		}
-		this._showAppMenu();
-		if (tIndicators && this.statusIndicatorsController) {
-			this.statusIndicatorsController.transferIndicators();
-		}
-	}
+        if (this.statusIndicatorsController) {
+            this.statusIndicatorsController.destroy();
+            this.statusIndicatorsController = null;
+        }
 
-	_pushPanel(i, monitor) {
-		let mmPanelBox = new MultiMonitorsPanelBox(monitor);
-		let panel = new MMPanel.MultiMonitorsPanel(i, mmPanelBox);
-		
-		Main.mmPanel.push(panel);
-		this.mmPanelBox.push(mmPanelBox);
-	}
+        if (this._monitorsChangedId) {
+            Main.layoutManager.disconnect(this._monitorsChangedId);
+            this._monitorsChangedId = null;
+        }
 
-	_popPanel() {
-		let panel = Main.mmPanel.pop();
-		if (this.statusIndicatorsController) {
-			this.statusIndicatorsController.transferBack(panel);
-		}
-		let mmPanelBox = this.mmPanelBox.pop();
-		mmPanelBox.destroy();
+        let panels2remove = this._monitorIds.length;
+        for (let i = 0; i < panels2remove; i++) {
+            let monitorId = this._monitorIds.pop();
+            this._popPanel();
+            console.log('remove: ' + monitorId);
+        }
     }
 
-	_changeMainPanelAppMenuButton(appMenuButton) {
-		let role = "appMenu";
-		let panel = Main.panel;
-		let indicator = panel.statusArea[role];
-		panel.menuManager.removeMenu(indicator.menu);
-		indicator.destroy();
-		if (indicator._actionGroupNotifyId) {
-			indicator._targetApp.disconnect(indicator._actionGroupNotifyId);
-			indicator._actionGroupNotifyId = 0;
+    _monitorsChanged() {
+        let monitorChange = Main.layoutManager.monitors.length - this._monitorIds.length - 1;
+        if (monitorChange < 0) {
+            for (let idx = 0; idx < -monitorChange; idx++) {
+                let monitorId = this._monitorIds.pop();
+                this._popPanel();
+                console.log('remove: ' + monitorId);
+            }
         }
-        if (indicator._busyNotifyId) {
-        	indicator._targetApp.disconnect(indicator._busyNotifyId);
-        	indicator._busyNotifyId = 0;
-        }
-        if (indicator.menu._windowsChangedId) {
-        	indicator.menu._app.disconnect(indicator.menu._windowsChangedId);
-        	indicator.menu._windowsChangedId = 0;
-        }
-		indicator = new appMenuButton(panel);
-		panel.statusArea[role] = indicator;
-		let box = panel._leftBox;
-		panel._addToPanelBox(role, indicator, box.get_n_children()+1, box);
-	}
 
-	_showAppMenu() {
-		if (this._settings.get_boolean(MMPanel.SHOW_APP_MENU_ID) && Main.mmPanel.length>0) {
-			if (!this.mmappMenu) {
-				this._changeMainPanelAppMenuButton(MMPanel.MultiMonitorsAppMenuButton);
-				this.mmappMenu = true;
-			}
-		}
-		else {
-			this._hideAppMenu();
-		}
-	}
+        let j = 0;
+        let tIndicators = false;
+        for (let i = 0; i < Main.layoutManager.monitors.length; i++) {
+            if (i !== Main.layoutManager.primaryIndex) {
+                let monitor = Main.layoutManager.monitors[i];
+                let monitorId = 'i' + i + 'x' + monitor.x + 'y' + monitor.y + 'w' + monitor.width + 'h' + monitor.height;
+                if (monitorChange > 0 && j === this._monitorIds.length) {
+                    this._monitorIds.push(monitorId);
+                    this._pushPanel(i, monitor);
+                    console.log('new: ' + monitorId);
+                    tIndicators = true;
+                } else if (this._monitorIds[j] > monitorId || this._monitorIds[j] < monitorId) {
+                    let oldMonitorId = this._monitorIds[j];
+                    this._monitorIds[j] = monitorId;
+                    this.mmPanelBox[j].updatePanel(monitor);
+                    console.log('update: ' + oldMonitorId + '>' + monitorId);
+                }
+                j++;
+            }
+        }
+        if (tIndicators && this.statusIndicatorsController) {
+            this.statusIndicatorsController.transferIndicators();
+        }
+    }
 
-	_hideAppMenu() {
-		if (this.mmappMenu) {
-			this._changeMainPanelAppMenuButton(Panel.AppMenuButton);
-			this.mmappMenu = false;
-			Main.panel._updatePanel()
-		}		
-	}
+    _pushPanel(i, monitor) {
+        let mmPanelBox = new MultiMonitorsPanelBox(monitor);
+        let panel = new MMPanel.MultiMonitorsPanel(i, mmPanelBox);
+
+        mmState.mmPanel.push(panel);
+        this.mmPanelBox.push(mmPanelBox);
+    }
+
+    _popPanel() {
+        let panel = mmState.mmPanel.pop();
+        if (this.statusIndicatorsController) {
+            this.statusIndicatorsController.transferBack(panel);
+        }
+        let mmPanelBox = this.mmPanelBox.pop();
+        mmPanelBox.destroy();
+    }
 };

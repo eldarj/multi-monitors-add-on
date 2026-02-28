@@ -19,12 +19,6 @@
       <description>Change visibility of Activities-Button on additional monitors.</description>
     </key>
     
-    <key name="show-app-menu" type="b">
-      <default>true</default>
-      <summary>Show AppMenu-Button on additional monitors.</summary>
-      <description>Change visibility of AppMenu-Button on additional monitors.</description>
-    </key>
-    
     <key name="show-date-time" type="b">
       <default>true</default>
       <summary>Show DateTime-Button on additional monitors.</summary>
